@@ -1,0 +1,78 @@
+{
+  "format": 1,
+  "restore": {
+    "C:\\Users\\Programmer_Nick\\OneDrive\\文档\\Visual Studio 18 项目文件\\ConvenientText\\ConvenientText.csproj": {}
+  },
+  "projects": {
+    "C:\\Users\\Programmer_Nick\\OneDrive\\文档\\Visual Studio 18 项目文件\\ConvenientText\\ConvenientText.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "C:\\Users\\Programmer_Nick\\OneDrive\\文档\\Visual Studio 18 项目文件\\ConvenientText\\ConvenientText.csproj",
+        "projectName": "ConvenientText",
+        "projectPath": "C:\\Users\\Programmer_Nick\\OneDrive\\文档\\Visual Studio 18 项目文件\\ConvenientText\\ConvenientText.csproj",
+        "packagesPath": "C:\\Users\\Programmer_Nick\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Programmer_Nick\\OneDrive\\文档\\Visual Studio 18 项目文件\\ConvenientText\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Programmer_Nick\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0-windows"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0-windows": {
+            "framework": "net8.0-windows7.0",
+            "targetAlias": "net8.0-windows",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "10.0.300"
+      },
+      "frameworks": {
+        "net8.0-windows": {
+          "framework": "net8.0-windows7.0",
+          "targetAlias": "net8.0-windows",
+          "dependencies": {
+            "ClassIsland.PluginSdk": {
+              "include": "Compile, Build, ContentFiles, Analyzers, BuildTransitive",
+              "target": "Package",
+              "version": "[1.7.106.2-dev-v2, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

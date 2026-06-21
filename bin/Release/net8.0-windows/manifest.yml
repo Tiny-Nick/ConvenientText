@@ -4,4 +4,4 @@ apiVersion: 2.1.0.0
 description: 桌面悬浮窗快速修改文本内容，支持颜色和字号调整
 entranceAssembly: "ConvenientText.dll"
 author: BiliBili @Tiny 11 25H2
-version: 1.0.0.0
+version: 1.0.0.1
