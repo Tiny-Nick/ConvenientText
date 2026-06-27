@@ -1,101 +1,149 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform;
 using ConvenientText.Models;
 using ConvenientText.Services;
+using System;
+using System.Runtime.InteropServices;
 
-namespace ConvenientText.Views;
-
-public partial class FloatingButton : Window
+namespace ConvenientText.Views
 {
-    private readonly TextDataModel _dataModel;
-    private readonly DataStorageService _storage;
-
-    public FloatingButton(TextDataModel dataModel, DataStorageService storage)
+    public partial class FloatingButton : Window
     {
-        _dataModel = dataModel;
-        _storage = storage;
+        private readonly TextDataModel _dataModel;
+        private readonly DataStorageService _storage;
+        private IntPtr _hwnd = IntPtr.Zero;
+        private bool _isLoaded = false;
 
-        // 窗口基础设置
-        Width = 48;
-        Height = 48;
-        CanResize = false;
-        ShowInTaskbar = false;
-        WindowStartupLocation = WindowStartupLocation.Manual;
-        Topmost = false;
-
-        // 移除系统窗口装饰（标题栏、系统边框）
-        SystemDecorations = SystemDecorations.None;
-        // 修正：透明级别赋值为数组格式（适配0.10语法）
-        TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
-
-        // 彻底透明且无边框
-        Background = Brushes.Transparent;
-        ExtendClientAreaToDecorationsHint = true;
-        ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.NoChrome;
-        ExtendClientAreaTitleBarHeightHint = 0;
-
-        // 窗口加载后调用 Win32 API 关闭系统阴影
-        Loaded += OnWindowLoaded;
-
-        // 圆形按钮（无任何阴影）
-        var button = new Button
+        public FloatingButton(TextDataModel dataModel, DataStorageService storage)
         {
-            Content = "✎",
-            FontSize = 22,
-            Background = new SolidColorBrush(Color.FromArgb(200, 68, 68, 68)),
-            Foreground = Brushes.White,
-            BorderThickness = new Thickness(0),
-            CornerRadius = new CornerRadius(24),
-            Width = 48,
-            Height = 48,
-            HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
-            VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
-            Cursor = new Cursor(StandardCursorType.Hand)
-        };
+            _dataModel = dataModel;
+            _storage = storage;
 
-        // 悬停效果
-        button.PointerEntered += (s, e) =>
-            button.Background = new SolidColorBrush(Color.FromArgb(220, 102, 102, 102));
-        button.PointerExited += (s, e) =>
-            button.Background = new SolidColorBrush(Color.FromArgb(200, 68, 68, 68));
+            Width = 56;
+            Height = 56;
+            CanResize = false;
+            ShowInTaskbar = false;
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Topmost = false;
+            Title = "";
 
-        // 点击弹出编辑窗口
-        button.Click += (s, e) =>
+            SystemDecorations = SystemDecorations.None;
+            TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
+            Background = Avalonia.Media.Brushes.Transparent;
+            ExtendClientAreaToDecorationsHint = true;
+            ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.NoChrome;
+            ExtendClientAreaTitleBarHeightHint = 0;
+
+            Position = new PixelPoint((int)_dataModel.FloatingX, (int)_dataModel.FloatingY);
+
+            this.Loaded += OnLoaded;
+            this.Deactivated += OnDeactivated;
+
+            // 关键：使用完全限定名 Avalonia.Controls.Button
+            var button = new Avalonia.Controls.Button
+            {
+                Content = "✎",
+                FontSize = 18,
+                Background = new SolidColorBrush(Avalonia.Media.Color.FromArgb(220, 68, 68, 68)),
+                Foreground = Avalonia.Media.Brushes.White,
+                BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(20),
+                Width = 40,
+                Height = 40,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
+                Cursor = new Avalonia.Input.Cursor(StandardCursorType.Hand)
+            };
+
+            var grid = new Grid();
+            grid.Children.Add(button);
+            button.HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center;
+            button.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
+            Content = grid;
+
+            button.PointerEntered += (s, e) =>
+                button.Background = new SolidColorBrush(Avalonia.Media.Color.FromArgb(235, 102, 102, 102));
+            button.PointerExited += (s, e) =>
+                button.Background = new SolidColorBrush(Avalonia.Media.Color.FromArgb(220, 68, 68, 68));
+
+            button.Click += (s, e) =>
+            {
+                var editWindow = new EditTextWindow(_dataModel);
+                editWindow.ShowDialog(this);
+                editWindow.Closed += (_, _) => _storage.Save(_dataModel);
+            };
+
+            this.PointerPressed += OnPointerPressed;
+            this.PointerReleased += OnPointerReleased;
+            this.Closed += (_, _) => _storage.Save(_dataModel);
+        }
+
+        private void OnLoaded(object? sender, RoutedEventArgs e)
         {
-            var editWindow = new EditTextWindow(_dataModel);
-            editWindow.ShowDialog(this);
-            editWindow.Closed += (_, _) => _storage.Save(_dataModel);
-        };
+            if (_isLoaded) return;
+            _isLoaded = true;
 
-        Content = button;
+            if (!OperatingSystem.IsWindows()) return;
+            var handle = this.TryGetPlatformHandle()?.Handle;
+            if (handle == null || handle.Value == IntPtr.Zero) return;
+            _hwnd = handle.Value;
 
-        // 窗口拖拽
-        this.PointerPressed += (s, e) =>
+            DwmSetWindowAttribute(_hwnd, DWMWA_NCRENDERING_POLICY, 2, 4);
+
+            int exStyle = GetWindowLong(_hwnd, GWL_EXSTYLE);
+            SetWindowLong(_hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+
+            SetWindowPos(_hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        }
+
+        private void OnDeactivated(object? sender, EventArgs e)
+        {
+            if (_hwnd != IntPtr.Zero)
+            {
+                SetWindowPos(_hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
+        }
+
+        private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
         {
             if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            {
                 this.BeginMoveDrag(e);
-        };
+            }
+        }
+
+        private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+        {
+            var pos = this.Position;
+            _dataModel.FloatingX = pos.X;
+            _dataModel.FloatingY = pos.Y;
+            _storage.Save(_dataModel);
+        }
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, int attrValue, int attrSize);
+        private const int DWMWA_NCRENDERING_POLICY = 2;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_BOTTOM = new IntPtr(1);
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOACTIVATE = 0x0010;
+
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+        private const int WS_EX_NOACTIVATE = 0x08000000;
     }
-
-    // 窗口加载完成后，关闭 Windows 系统自带的 DWM 阴影
-    private void OnWindowLoaded(object sender, EventArgs e)
-    {
-        if (!OperatingSystem.IsWindows()) return;
-
-        var handle = this.TryGetPlatformHandle()?.Handle;
-        if (handle == null || handle.Value == IntPtr.Zero) return;
-
-        // 关闭 DWM 非客户区渲染，彻底消除系统阴影边框
-        DwmSetWindowAttribute(handle.Value, DWMWA_NCRENDERING_POLICY, 2, 4);
-    }
-
-    // Win32 DWM API 声明
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, int attrValue, int attrSize);
-    private const int DWMWA_NCRENDERING_POLICY = 2;
 }

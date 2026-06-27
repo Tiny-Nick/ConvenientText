@@ -1,11 +1,12 @@
 ﻿using Avalonia.Controls;
 
-namespace ConvenientText.Components;
-
-public partial class ConvenientTextSettingsControl : UserControl
+namespace ConvenientText.Components
 {
-    public ConvenientTextSettingsControl()
+    public partial class ConvenientTextSettingsControl : Avalonia.Controls.UserControl
     {
-        InitializeComponent();
+        public ConvenientTextSettingsControl()
+        {
+            InitializeComponent();
+        }
     }
 }

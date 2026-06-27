@@ -1,0 +1,37 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ConvenientText.Views.UsbNotificationWindow"
+        Title="提示"
+        Width="420"
+        Height="200"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Topmost="True">
+	<Grid Margin="20">
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="*" />
+			<RowDefinition Height="Auto" />
+		</Grid.RowDefinitions>
+
+		<TextBlock Grid.Row="0" Text="U盘已插入" FontWeight="Bold" FontSize="18" Margin="0,0,0,15" />
+
+		<StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="10">
+			<TextBlock Text="请注意黑板的推拉以防止U盘和白板插口的损坏"
+                       FontSize="14"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center" />
+			<TextBlock Text="请小心操作，避免损坏设备"
+                       FontSize="12"
+                       Foreground="Gray"
+                       HorizontalAlignment="Center" />
+		</StackPanel>
+
+		<StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" Spacing="10">
+			<Button Content="确定"
+                    Classes="Accent"
+                    Width="80"
+                    Click="OnOkClick" />
+		</StackPanel>
+	</Grid>
+</Window>

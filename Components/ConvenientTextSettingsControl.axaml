@@ -1,5 +1,5 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="ConvenientText.Components.ConvenientTextSettingsControl">
-	<TextBlock Text="此组件无需额外设置" Margin="10" />
+	<TextBlock Text="此组件无需额外设置，请在插件设置中调整" Margin="10" />
 </UserControl>

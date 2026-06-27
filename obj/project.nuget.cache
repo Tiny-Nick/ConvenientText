@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "z8guL6nwbEw=",
+  "dgSpecHash": "Nn/j5bzud08=",
   "success": true,
   "projectFilePath": "C:\\Users\\Programmer_Nick\\OneDrive\\文档\\Visual Studio 18 项目文件\\ConvenientText\\ConvenientText.csproj",
   "expectedPackageFiles": [
@@ -99,6 +99,7 @@
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\splat\\15.3.1\\splat.15.3.1.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\svg.custom\\1.0.0\\svg.custom.1.0.0.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\svg.model\\1.0.0\\svg.model.1.0.0.nupkg.sha512",
+    "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.codedom\\7.0.0\\system.codedom.7.0.0.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.collections\\4.3.0\\system.collections.4.3.0.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.collections.immutable\\1.6.0\\system.collections.immutable.1.6.0.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.componentmodel.annotations\\5.0.0\\system.componentmodel.annotations.5.0.0.nupkg.sha512",
@@ -108,6 +109,7 @@
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.globalization\\4.3.0\\system.globalization.4.3.0.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.io\\4.3.0\\system.io.4.3.0.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.io.pipelines\\9.0.2\\system.io.pipelines.9.0.2.nupkg.sha512",
+    "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.management\\7.0.2\\system.management.7.0.2.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.memory\\4.5.4\\system.memory.4.5.4.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.objectmodel\\4.3.0\\system.objectmodel.4.3.0.nupkg.sha512",
     "C:\\Users\\Programmer_Nick\\.nuget\\packages\\system.reactive\\6.0.1\\system.reactive.6.0.1.nupkg.sha512",
