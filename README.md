@@ -50,7 +50,7 @@ BiliBili @Tiny 11 25H2
 
 ## 1.1.0.4
 
-## 更改
+### 更改
 
 - 更改U盘插入窗口样式，调用Classisland内置窗口UI
 
