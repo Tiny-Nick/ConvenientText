@@ -28,11 +28,14 @@ BiliBili @Tiny 11 25H2
 - 宣传片： https://www.bilibili.com/video/BV1KhjH6JE7P/?share_source=copy_web&vd_source=762b42e92a3ba264404084a748e6e867
 - 网盘下载：https://pan.baidu.com/s/1CBuayEWFDYlqeTEqV5oQ2A?pwd=ProN 提取码: ProN
 - Github仓库：https://github.com/Tiny-Nick/ConvenientText
+
 > 网盘版本可能滞后于 GitHub Release，建议优先使用 GitHub 渠道。
 
 > 目前网盘版本还处于1.0.X.X版本滞后状态！网盘通道也许不会再继续提供最新版本下载
 
-> 本插件代码部分由 AI （85%+）生成，如果遇到 Bug 欢迎去往宣传片视频评论区反馈，目前会保持支持维护。（1.1.X.X开始的部分代码为作者修订）
+> 本插件代码部分由 AI （90%+）生成，如果遇到 Bug 欢迎去往宣传片视频评论区反馈，目前会保持支持维护。（1.1.X.X开始的部分代码为作者修订）
+
+> GitHub 仓库里的 README 与文件下载到所显示的 README 会有所不同，这是因为修改过后的 README 文件不会上传至插件文件中，无数内容以 GitHub 仓库中的 README 文件为主。
 
 # 更新日志
 
