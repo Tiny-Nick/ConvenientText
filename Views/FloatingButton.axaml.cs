@@ -9,6 +9,13 @@ using ConvenientText.Services;
 using System;
 using System.Runtime.InteropServices;
 
+// 消除类型歧义
+using AvaloniaPoint = Avalonia.Point;
+using AvaloniaBrushes = Avalonia.Media.Brushes;
+using AvaloniaButton = Avalonia.Controls.Button;
+using AvaloniaColor = Avalonia.Media.Color;
+using AvaloniaCursor = Avalonia.Input.Cursor;
+
 namespace ConvenientText.Views
 {
     public partial class FloatingButton : Window
@@ -17,6 +24,13 @@ namespace ConvenientText.Views
         private readonly DataStorageService _storage;
         private IntPtr _hwnd = IntPtr.Zero;
         private bool _isLoaded = false;
+
+        // 拖动相关（使用屏幕像素坐标）
+        private bool _isPointerDown = false;
+        private bool _isDragging = false;
+        private PixelPoint _windowPosOnDown;      // 按下时的窗口位置（屏幕像素）
+        private PixelPoint _mouseScreenOnDown;    // 按下时鼠标的屏幕像素坐标
+        private const double DragThreshold = 10;  // 像素
 
         public FloatingButton(TextDataModel dataModel, DataStorageService storage)
         {
@@ -33,7 +47,7 @@ namespace ConvenientText.Views
 
             SystemDecorations = SystemDecorations.None;
             TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
-            Background = Avalonia.Media.Brushes.Transparent;
+            Background = AvaloniaBrushes.Transparent;
             ExtendClientAreaToDecorationsHint = true;
             ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.NoChrome;
             ExtendClientAreaTitleBarHeightHint = 0;
@@ -43,20 +57,19 @@ namespace ConvenientText.Views
             this.Loaded += OnLoaded;
             this.Deactivated += OnDeactivated;
 
-            // 关键：使用完全限定名 Avalonia.Controls.Button
-            var button = new Avalonia.Controls.Button
+            var button = new AvaloniaButton
             {
                 Content = "✎",
                 FontSize = 18,
-                Background = new SolidColorBrush(Avalonia.Media.Color.FromArgb(220, 68, 68, 68)),
-                Foreground = Avalonia.Media.Brushes.White,
+                Background = new SolidColorBrush(AvaloniaColor.FromArgb(220, 68, 68, 68)),
+                Foreground = AvaloniaBrushes.White,
                 BorderThickness = new Thickness(0),
                 CornerRadius = new CornerRadius(20),
                 Width = 40,
                 Height = 40,
                 HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center,
                 VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Cursor = new Avalonia.Input.Cursor(StandardCursorType.Hand)
+                Cursor = new AvaloniaCursor(StandardCursorType.Hand)
             };
 
             var grid = new Grid();
@@ -65,11 +78,7 @@ namespace ConvenientText.Views
             button.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
             Content = grid;
 
-            button.PointerEntered += (s, e) =>
-                button.Background = new SolidColorBrush(Avalonia.Media.Color.FromArgb(235, 102, 102, 102));
-            button.PointerExited += (s, e) =>
-                button.Background = new SolidColorBrush(Avalonia.Media.Color.FromArgb(220, 68, 68, 68));
-
+            // 按钮点击打开编辑窗口
             button.Click += (s, e) =>
             {
                 var editWindow = new EditTextWindow(_dataModel);
@@ -77,9 +86,63 @@ namespace ConvenientText.Views
                 editWindow.Closed += (_, _) => _storage.Save(_dataModel);
             };
 
+            // 窗口级别指针事件（用于拖动）
             this.PointerPressed += OnPointerPressed;
+            this.PointerMoved += OnPointerMoved;
             this.PointerReleased += OnPointerReleased;
             this.Closed += (_, _) => _storage.Save(_dataModel);
+        }
+
+        private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
+        {
+            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
+            {
+                _isPointerDown = true;
+                _isDragging = false;
+                _windowPosOnDown = this.Position;
+                _mouseScreenOnDown = this.PointToScreen(e.GetPosition(this));
+            }
+        }
+
+        private void OnPointerMoved(object? sender, PointerEventArgs e)
+        {
+            if (!_isPointerDown) return;
+
+            var mouseScreenCurrent = this.PointToScreen(e.GetPosition(this));
+            var delta = mouseScreenCurrent - _mouseScreenOnDown;
+
+            if (Math.Abs(delta.X) > DragThreshold || Math.Abs(delta.Y) > DragThreshold)
+            {
+                if (!_isDragging)
+                {
+                    _isDragging = true;
+                }
+
+                // 新位置 = 初始窗口位置 + 鼠标位移
+                var newX = _windowPosOnDown.X + delta.X;
+                var newY = _windowPosOnDown.Y + delta.Y;
+                this.Position = new PixelPoint(newX, newY);
+            }
+        }
+
+        private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+        {
+            if (!_isPointerDown) return;
+            _isPointerDown = false;
+
+            if (_isDragging)
+            {
+                var pos = this.Position;
+                _dataModel.FloatingX = pos.X;
+                _dataModel.FloatingY = pos.Y;
+                _storage.Save(_dataModel);
+
+                if (_hwnd != IntPtr.Zero)
+                {
+                    SetWindowPos(_hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                }
+                _isDragging = false;
+            }
         }
 
         private void OnLoaded(object? sender, RoutedEventArgs e)
@@ -108,22 +171,7 @@ namespace ConvenientText.Views
             }
         }
 
-        private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
-        {
-            if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
-            {
-                this.BeginMoveDrag(e);
-            }
-        }
-
-        private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
-        {
-            var pos = this.Position;
-            _dataModel.FloatingX = pos.X;
-            _dataModel.FloatingY = pos.Y;
-            _storage.Save(_dataModel);
-        }
-
+        // === Win32 互操作（保持不变） ===
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, int attrValue, int attrSize);
         private const int DWMWA_NCRENDERING_POLICY = 2;

@@ -1,5 +1,13 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="ConvenientText.Components.ConvenientTextSettingsControl">
-	<TextBlock Text="此组件无需额外设置，请在插件设置中调整" Margin="10" />
+             x:Class="ConvenientText.Components.ConvenientTextSettingsControl"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             Padding="16,12,16,16">
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+		<TextBlock Text="此组件无需额外设置，请在插件设置中调整"
+                   Margin="0"
+                   TextWrapping="Wrap" />
+	</ScrollViewer>
 </UserControl>

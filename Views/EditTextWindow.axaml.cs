@@ -24,7 +24,7 @@ namespace ConvenientText.Views
             Height = 130;
             CanResize = false;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            Topmost = true;
+            Topmost = false;
 
             _inputBox = new Avalonia.Controls.TextBox
             {

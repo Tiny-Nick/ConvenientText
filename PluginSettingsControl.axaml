@@ -1,43 +1,74 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="ConvenientText.PluginSettingsControl">
-	<StackPanel Spacing="15" Margin="20">
-		<TextBlock Text="便捷文本设置" FontWeight="Bold" FontSize="18" />
+             x:Class="ConvenientText.PluginSettingsControl"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             Padding="16,12,16,16">
+	<!-- 统一内边距，与系统设置页对齐 -->
+	<ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+		<StackPanel Spacing="12">
+			<!-- 间距调整为12，去除 Margin -->
+			<!-- 标题 -->
+			<TextBlock Text="便捷文本设置"
+                       FontWeight="Bold"
+                       FontSize="18"
+                       Margin="0,0,0,4" />
 
-		<TextBox x:Name="DisplayTextInput" Watermark="输入要显示的文字..." Text="{Binding DisplayText}" />
+			<!-- 以下控件保持不变 -->
+			<TextBox x:Name="DisplayTextInput"
+                     Watermark="输入要显示的文字..."
+                     Text="{Binding DisplayText}" />
 
-		<StackPanel Orientation="Horizontal" Spacing="10">
-			<TextBlock Text="文字颜色：" VerticalAlignment="Center" />
-			<ColorPicker x:Name="TextColorPicker" Width="40" Height="30" Color="{Binding TextColor}" />
-		</StackPanel>
-
-		<StackPanel Orientation="Horizontal" Spacing="10">
-			<TextBlock Text="字号：" VerticalAlignment="Center" />
-			<Slider x:Name="FontSizeSlider" Minimum="10" Maximum="48" Value="{Binding FontSize}" Width="150" TickFrequency="2" IsSnapToTickEnabled="True" />
-			<TextBlock x:Name="FontSizeLabel" Text="{Binding FontSize}" VerticalAlignment="Center" />
-		</StackPanel>
-
-		<Separator Margin="0,10,0,10" />
-
-		<CheckBox x:Name="FloatingButtonToggle" Content="启用悬浮按钮" IsChecked="{Binding IsFloatingButtonEnabled}" />
-
-		<Expander Header="时间段显示控制" IsExpanded="False">
-			<StackPanel Spacing="10">
-				<CheckBox x:Name="EnableTimeRangeCheck" Content="启用时间段限制" IsChecked="{Binding EnableTimeRange}" />
-				<StackPanel Orientation="Horizontal" Spacing="10">
-					<TextBlock Text="开始时间：" VerticalAlignment="Center" />
-					<TimePicker x:Name="StartTimePicker" SelectedTime="{Binding StartTime}" />
-				</StackPanel>
-				<StackPanel Orientation="Horizontal" Spacing="10">
-					<TextBlock Text="结束时间：" VerticalAlignment="Center" />
-					<TimePicker x:Name="EndTimePicker" SelectedTime="{Binding EndTime}" />
-				</StackPanel>
-				<TextBlock Text="在指定时间段外，组件和悬浮按钮将自动隐藏" FontSize="12" Foreground="Gray" />
+			<StackPanel Orientation="Horizontal" Spacing="10">
+				<TextBlock Text="文字颜色：" VerticalAlignment="Center" />
+				<ColorPicker x:Name="TextColorPicker" Width="40" Height="30" Color="{Binding TextColor}" />
 			</StackPanel>
-		</Expander>
 
-		<CheckBox x:Name="UsbNotificationToggle" Content="U盘插入时弹出系统通知" IsChecked="{Binding EnableUsbNotification}" />
+			<StackPanel Orientation="Horizontal" Spacing="10">
+				<TextBlock Text="字号：" VerticalAlignment="Center" />
+				<Slider x:Name="FontSizeSlider"
+                        Minimum="10" Maximum="48"
+                        Value="{Binding FontSize}"
+                        Width="150"
+                        TickFrequency="2"
+                        IsSnapToTickEnabled="True" />
+				<TextBlock x:Name="FontSizeLabel" Text="{Binding FontSize}" VerticalAlignment="Center" />
+			</StackPanel>
 
-		<TextBlock Text="修改后自动保存" FontSize="12" Foreground="Gray" Margin="0,10,0,0" />
-	</StackPanel>
+			<Separator Margin="0,8,0,8" />
+
+			<CheckBox x:Name="FloatingButtonToggle"
+                      Content="启用悬浮按钮"
+                      IsChecked="{Binding IsFloatingButtonEnabled}" />
+
+			<Expander Header="时间段显示控制" IsExpanded="False">
+				<StackPanel Spacing="8" Margin="0,8,0,0">
+					<CheckBox x:Name="EnableTimeRangeCheck"
+                              Content="启用时间段限制"
+                              IsChecked="{Binding EnableTimeRange}" />
+					<StackPanel Orientation="Horizontal" Spacing="10">
+						<TextBlock Text="开始时间：" VerticalAlignment="Center" />
+						<TimePicker x:Name="StartTimePicker" SelectedTime="{Binding StartTime}" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" Spacing="10">
+						<TextBlock Text="结束时间：" VerticalAlignment="Center" />
+						<TimePicker x:Name="EndTimePicker" SelectedTime="{Binding EndTime}" />
+					</StackPanel>
+					<TextBlock Text="在指定时间段外，组件和悬浮按钮将自动隐藏"
+                               FontSize="12"
+                               Foreground="Gray" />
+				</StackPanel>
+			</Expander>
+
+			<CheckBox x:Name="UsbNotificationToggle"
+                      Content="U盘插入时弹出系统通知"
+                      IsChecked="{Binding EnableUsbNotification}" />
+
+			<TextBlock Text="修改后自动保存"
+                       FontSize="12"
+                       Foreground="Gray"
+                       Margin="0,8,0,0" />
+		</StackPanel>
+	</ScrollViewer>
 </UserControl>

@@ -29,6 +29,7 @@ namespace ConvenientText
         {
             services.AddSingleton<TextDataModel>();
             services.AddSingleton<DataStorageService>();
+            services.AddSingleton<TimeRangeService>();
             services.AddHostedService<UsbDetectionService>(provider =>
                 new UsbDetectionService(provider.GetRequiredService<TextDataModel>()));
             services.AddHostedService<ServiceProviderHolder>();
@@ -62,20 +63,22 @@ namespace ConvenientText
         {
             private readonly TextDataModel _dataModel;
             private readonly DataStorageService _storage;
+            private readonly TimeRangeService _timeRangeService;
             private FloatingButton? _floatingButton;
-            private System.Timers.Timer? _visibilityTimer;
             private PropertyChangedEventHandler? _modelChangedHandler;
 
-            public FloatingWindowHostedService(TextDataModel dataModel, DataStorageService storage)
+            public FloatingWindowHostedService(TextDataModel dataModel, DataStorageService storage, TimeRangeService timeRangeService)
             {
                 _dataModel = dataModel;
                 _storage = storage;
+                _timeRangeService = timeRangeService;
             }
 
             public Task StartAsync(CancellationToken cancellationToken)
             {
                 Dispatcher.UIThread.Post(() =>
                 {
+                    // 加载保存的数据
                     var saved = _storage.Load();
                     _dataModel.DisplayText = saved.DisplayText;
                     _dataModel.TextColor = saved.TextColor;
@@ -88,8 +91,12 @@ namespace ConvenientText
                     _dataModel.EndTime = saved.EndTime;
                     _dataModel.EnableUsbNotification = saved.EnableUsbNotification;
 
+                    // 同步 TimeRangeService 的设置
+                    _timeRangeService.UpdateSettings(_dataModel.EnableTimeRange, _dataModel.StartTime, _dataModel.EndTime);
+
                     _floatingButton = new FloatingButton(_dataModel, _storage);
 
+                    // 监听数据模型变化（时间范围、启用开关）
                     _modelChangedHandler = (sender, e) =>
                     {
                         if (e.PropertyName == nameof(TextDataModel.IsFloatingButtonEnabled) ||
@@ -97,20 +104,43 @@ namespace ConvenientText
                             e.PropertyName == nameof(TextDataModel.StartTime) ||
                             e.PropertyName == nameof(TextDataModel.EndTime))
                         {
+                            // 当时间范围设置变化时，同步到 TimeRangeService
+                            if (e.PropertyName == nameof(TextDataModel.EnableTimeRange) ||
+                                e.PropertyName == nameof(TextDataModel.StartTime) ||
+                                e.PropertyName == nameof(TextDataModel.EndTime))
+                            {
+                                _timeRangeService.UpdateSettings(_dataModel.EnableTimeRange, _dataModel.StartTime, _dataModel.EndTime);
+                            }
                             UpdateVisibility();
                         }
                     };
                     _dataModel.PropertyChanged += _modelChangedHandler;
 
-                    _visibilityTimer = new System.Timers.Timer(10000);
-                    _visibilityTimer.Elapsed += (_, _) => Dispatcher.UIThread.Post(UpdateVisibility);
-                    _visibilityTimer.Start();
+                    // 订阅组件激活状态变化事件
+                    ConvenientTextComponent.ActiveChanged += OnComponentActiveChanged;
 
+                    // 订阅时间范围服务的状态变化
+                    _timeRangeService.PropertyChanged += OnTimeRangeChanged;
+
+                    // 初始更新可见性
                     UpdateVisibility();
                     _floatingButton.Show();
                 });
 
                 return Task.CompletedTask;
+            }
+
+            private void OnComponentActiveChanged(object? sender, bool active)
+            {
+                Dispatcher.UIThread.Post(UpdateVisibility);
+            }
+
+            private void OnTimeRangeChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+            {
+                if (e.PropertyName == nameof(TimeRangeService.IsInTimeRange))
+                {
+                    Dispatcher.UIThread.Post(UpdateVisibility);
+                }
             }
 
             private void UpdateVisibility()
@@ -119,7 +149,7 @@ namespace ConvenientText
 
                 bool shouldShow = _dataModel.IsFloatingButtonEnabled &&
                                   ConvenientTextComponent.IsComponentActive &&
-                                  _dataModel.IsInTimeRange();
+                                  _timeRangeService.IsInTimeRange;
 
                 _floatingButton.IsVisible = shouldShow;
             }
@@ -128,10 +158,11 @@ namespace ConvenientText
             {
                 Dispatcher.UIThread.Post(() =>
                 {
-                    _visibilityTimer?.Stop();
-                    _visibilityTimer?.Dispose();
                     if (_modelChangedHandler != null)
                         _dataModel.PropertyChanged -= _modelChangedHandler;
+                    ConvenientTextComponent.ActiveChanged -= OnComponentActiveChanged;
+                    if (_timeRangeService != null)
+                        _timeRangeService.PropertyChanged -= OnTimeRangeChanged;
                     _floatingButton?.Close();
                     _floatingButton = null;
                 });
