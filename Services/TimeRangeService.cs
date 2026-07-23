@@ -1,177 +1,67 @@
-﻿using System;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-using System.Timers;
-using Microsoft.Win32;
+// ============================================================
+//  TimeRangeService.cs
+//  作用：全插件共用的“心跳时钟”。
+//  每 5 秒钟更新一次当前时间并广播，组件和悬浮按钮靠它来
+//  判断“现在是否处于用户设定的时间段内”，从而自动显示/隐藏。
+// ============================================================
 
-// 明确使用 System.Timers.Timer，避免与 System.Windows.Forms.Timer 冲突
-using Timer = System.Timers.Timer;
+using System;
+using System.ComponentModel;
 
 namespace ConvenientText.Services
 {
     /// <summary>
-    /// 时间范围状态服务，负责精确计算并通知“是否在时间段内”的变化。
+    /// 时间广播服务。
+    /// 内部开一个定时器，每 5 秒把 CurrentTime 刷新为当前时间，
+    /// 并通过 INotifyPropertyChanged 通知所有订阅者。
+    /// 在 Plugin.cs 里注册为单例（AddSingleton），整个插件共享一个实例。
     /// </summary>
     public class TimeRangeService : INotifyPropertyChanged
     {
-        private bool _enableTimeRange;
-        private TimeSpan _startTime;
-        private TimeSpan _endTime;
-        private bool _isInTimeRange;
+        /// <summary>当前时间（每 5 秒刷新一次）</summary>
+        private DateTime _currentTime = DateTime.Now;
 
-        private Timer? _timer; // 单次定时器
-        private readonly object _lock = new();
+        /// <summary>后台定时器：负责周期性地刷新 _currentTime</summary>
+        private readonly System.Timers.Timer _updateTimer;
 
+        /// <summary>属性变化事件，界面/组件订阅它来收到“时间变了”的通知</summary>
         public event PropertyChangedEventHandler? PropertyChanged;
-
-        public bool EnableTimeRange
-        {
-            get => _enableTimeRange;
-            set
-            {
-                if (_enableTimeRange == value) return;
-                _enableTimeRange = value;
-                OnPropertyChanged(nameof(EnableTimeRange));
-                RecalculateTimer();
-            }
-        }
-
-        public TimeSpan StartTime
-        {
-            get => _startTime;
-            set
-            {
-                if (_startTime == value) return;
-                _startTime = value;
-                OnPropertyChanged(nameof(StartTime));
-                RecalculateTimer();
-            }
-        }
-
-        public TimeSpan EndTime
-        {
-            get => _endTime;
-            set
-            {
-                if (_endTime == value) return;
-                _endTime = value;
-                OnPropertyChanged(nameof(EndTime));
-                RecalculateTimer();
-            }
-        }
-
-        public bool IsInTimeRange
-        {
-            get => _isInTimeRange;
-            private set
-            {
-                if (_isInTimeRange == value) return;
-                _isInTimeRange = value;
-                OnPropertyChanged(nameof(IsInTimeRange));
-            }
-        }
 
         public TimeRangeService()
         {
-            IsInTimeRange = ComputeIsInTimeRange();
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            // 5000 毫秒 = 5 秒刷新一次。
+            // 注意：System.Timers.Timer 的 Elapsed 在【后台线程】触发，
+            // 所以订阅者在收到通知后如果要操作界面，必须切回 UI 线程
+            // （各订阅处都用 Dispatcher.UIThread.Post 处理了）。
+            _updateTimer = new System.Timers.Timer(5000);
+            _updateTimer.Elapsed += (s, e) =>
             {
-                SystemEvents.TimeChanged += (_, _) => RecalculateTimer();
-            }
-        }
-
-        public void UpdateSettings(bool enable, TimeSpan start, TimeSpan end)
-        {
-            lock (_lock)
-            {
-                _enableTimeRange = enable;
-                _startTime = start;
-                _endTime = end;
-                RecalculateTimerLocked();
-            }
-        }
-
-        private void RecalculateTimer()
-        {
-            lock (_lock)
-            {
-                RecalculateTimerLocked();
-            }
-        }
-
-        private void RecalculateTimerLocked()
-        {
-            _timer?.Stop();
-            _timer?.Dispose();
-            _timer = null;
-
-            if (!_enableTimeRange)
-            {
-                IsInTimeRange = true;
-                return;
-            }
-
-            bool current = ComputeIsInTimeRange();
-            IsInTimeRange = current;
-
-            DateTime now = DateTime.Now;
-            TimeSpan nowTime = now.TimeOfDay;
-            DateTime nextEvent;
-
-            if (current)
-            {
-                DateTime todayEnd = now.Date.Add(_endTime);
-                if (_endTime > _startTime)
-                    nextEvent = nowTime < _endTime ? todayEnd : todayEnd.AddDays(1);
-                else
-                    nextEvent = (nowTime >= _startTime || nowTime < _endTime)
-                        ? (nowTime < _endTime ? todayEnd : todayEnd.AddDays(1))
-                        : todayEnd;
-                if (nextEvent <= now) nextEvent = nextEvent.AddSeconds(1);
-            }
-            else
-            {
-                DateTime todayStart = now.Date.Add(_startTime);
-                if (_startTime > _endTime)
-                {
-                    if (nowTime >= _endTime && nowTime < _startTime)
-                        nextEvent = todayStart;
-                    else
-                        nextEvent = todayStart.AddDays(1);
-                }
-                else
-                {
-                    nextEvent = nowTime < _startTime ? todayStart : todayStart.AddDays(1);
-                }
-                if (nextEvent <= now) nextEvent = nextEvent.AddSeconds(1);
-            }
-
-            double interval = (nextEvent - now).TotalMilliseconds;
-            if (interval < 0) interval = 0;
-
-            _timer = new Timer(interval);
-            _timer.Elapsed += (s, e) =>
-            {
-                lock (_lock)
-                {
-                    IsInTimeRange = ComputeIsInTimeRange();
-                    RecalculateTimerLocked();
-                }
+                CurrentTime = DateTime.Now;
             };
-            _timer.AutoReset = false;
-            _timer.Start();
+            _updateTimer.Start();
         }
 
-        private bool ComputeIsInTimeRange()
+        /// <summary>
+        /// 当前时间。外部只读，只有定时器能改。
+        /// </summary>
+        public DateTime CurrentTime
         {
-            if (!_enableTimeRange) return true;
-            var now = DateTime.Now.TimeOfDay;
-            if (_startTime <= _endTime)
-                return now >= _startTime && now <= _endTime;
-            else
-                return now >= _startTime || now <= _endTime;
+            get => _currentTime;
+            private set
+            {
+                if (_currentTime == value) return; // 值没变就不通知，减少无谓刷新
+                _currentTime = value;
+                OnPropertyChanged(nameof(CurrentTime));
+            }
         }
 
+        /// <summary>
+        /// 当前时刻（一天内的时间，不含日期）。
+        /// 组件的时间段判断用的就是它，例如 8:00 ~ 22:00。
+        /// </summary>
+        public TimeSpan NowTimeOfDay => CurrentTime.TimeOfDay;
+
+        /// <summary>触发属性变化通知</summary>
         protected void OnPropertyChanged(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }

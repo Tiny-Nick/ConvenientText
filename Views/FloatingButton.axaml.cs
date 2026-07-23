@@ -1,4 +1,18 @@
-﻿using Avalonia;
+﻿// ============================================================
+//  FloatingButton.axaml.cs
+//  作用：桌面上的悬浮编辑按钮（一个无边框小圆钮窗口）。
+//  特性：
+//    · 置底显示（通过 Win32 SetWindowPos 放到窗口层最底部）；
+//    · 可拖动，松手后把新位置保存到共享存储；
+//    · 点击打开“选择组件”窗口；
+//    · 是否显示由 FloatingWindowHostedService（Plugin.cs 里）
+//      根据开关、时间段、组件是否加载来统一控制。
+//  本文件也是代码建界面，没有对应的 .axaml 文件。
+// ============================================================
+
+using System;
+using System.Runtime.InteropServices;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -6,11 +20,8 @@ using Avalonia.Media;
 using Avalonia.Platform;
 using ConvenientText.Models;
 using ConvenientText.Services;
-using System;
-using System.Runtime.InteropServices;
 
-// 消除类型歧义
-using AvaloniaPoint = Avalonia.Point;
+// 消除歧义别名
 using AvaloniaBrushes = Avalonia.Media.Brushes;
 using AvaloniaButton = Avalonia.Controls.Button;
 using AvaloniaColor = Avalonia.Media.Color;
@@ -18,33 +29,48 @@ using AvaloniaCursor = Avalonia.Input.Cursor;
 
 namespace ConvenientText.Views
 {
+    /// <summary>
+    /// 桌面悬浮编辑按钮。一个 56x56 的无边框透明小窗口，
+    /// 里面放一个圆形 ✎ 按钮；支持拖动换位，点击打开组件列表。
+    /// </summary>
     public partial class FloatingButton : Window
     {
-        private readonly TextDataModel _dataModel;
+        /// <summary>当前绑定的组件数据（决定按钮初始位置；拖动后坐标也写回它）</summary>
+        private TextDataModel _dataModel;
+
+        /// <summary>共享数据存储，拖动结束时保存新位置</summary>
         private readonly DataStorageService _storage;
+
+        /// <summary>窗口句柄（Win32 置底操作用，仅 Windows 有效）</summary>
         private IntPtr _hwnd = IntPtr.Zero;
+
+        /// <summary>防止 Loaded 事件重复初始化</summary>
         private bool _isLoaded = false;
 
-        // 拖动相关（使用屏幕像素坐标）
-        private bool _isPointerDown = false;
-        private bool _isDragging = false;
-        private PixelPoint _windowPosOnDown;      // 按下时的窗口位置（屏幕像素）
-        private PixelPoint _mouseScreenOnDown;    // 按下时鼠标的屏幕像素坐标
-        private const double DragThreshold = 10;  // 像素
+        // ----- 拖动状态机 -----
+        private bool _isPointerDown = false;    // 左键是否按着
+        private bool _isDragging = false;       // 是否已经进入拖动（超过阈值）
+        private PixelPoint _windowPosOnDown;    // 按下瞬间的窗口位置
+        private PixelPoint _mouseScreenOnDown;  // 按下瞬间的鼠标屏幕坐标
+
+        /// <summary>拖动阈值（像素）：按下后移动超过它才算拖动，否则算点击</summary>
+        private const double DragThreshold = 10;
 
         public FloatingButton(TextDataModel dataModel, DataStorageService storage)
         {
             _dataModel = dataModel;
             _storage = storage;
 
+            // ----- 窗口基本形态：小而安静的桌面小部件 -----
             Width = 56;
             Height = 56;
-            CanResize = false;
-            ShowInTaskbar = false;
-            WindowStartupLocation = WindowStartupLocation.Manual;
-            Topmost = false;
+            CanResize = false;                 // 不可调大小
+            ShowInTaskbar = false;             // 不占任务栏
+            WindowStartupLocation = WindowStartupLocation.Manual; // 位置由我们自己定
+            Topmost = false;                   // 不置顶（要当桌面“贴纸”）
             Title = "";
 
+            // ----- 无边框 + 全透明：只露出中间的圆形按钮 -----
             SystemDecorations = SystemDecorations.None;
             TransparencyLevelHint = new[] { WindowTransparencyLevel.Transparent };
             Background = AvaloniaBrushes.Transparent;
@@ -52,11 +78,13 @@ namespace ConvenientText.Views
             ExtendClientAreaChromeHints = ExtendClientAreaChromeHints.NoChrome;
             ExtendClientAreaTitleBarHeightHint = 0;
 
+            // 初始位置取上次保存的坐标
             Position = new PixelPoint((int)_dataModel.FloatingX, (int)_dataModel.FloatingY);
 
-            this.Loaded += OnLoaded;
-            this.Deactivated += OnDeactivated;
+            this.Loaded += OnLoaded!;
+            this.Deactivated += OnDeactivated!;
 
+            // ----- 圆形 ✎ 按钮本体 -----
             var button = new AvaloniaButton
             {
                 Content = "✎",
@@ -78,19 +106,67 @@ namespace ConvenientText.Views
             button.VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center;
             Content = grid;
 
-            // 按钮点击打开编辑窗口
-            button.Click += (s, e) =>
-            {
-                var editWindow = new EditTextWindow(_dataModel);
-                editWindow.ShowDialog(this);
-                editWindow.Closed += (_, _) => _storage.Save(_dataModel);
-            };
+            button.Click += OnButtonClick;
 
-            // 窗口级别指针事件（用于拖动）
-            this.PointerPressed += OnPointerPressed;
-            this.PointerMoved += OnPointerMoved;
-            this.PointerReleased += OnPointerReleased;
-            this.Closed += (_, _) => _storage.Save(_dataModel);
+            this.PointerPressed += OnPointerPressed!;
+            this.PointerMoved += OnPointerMoved!;
+            this.PointerReleased += OnPointerReleased!;
+        }
+
+        public void UpdateDataModel(TextDataModel newModel)
+        {
+            bool sameComponent = _dataModel.ComponentId == newModel.ComponentId;
+            _dataModel = newModel;
+            // 只有切换到另一个组件时才跳转位置；同一组件的数据刷新不动窗口
+            if (!sameComponent)
+                Position = new PixelPoint((int)_dataModel.FloatingX, (int)_dataModel.FloatingY);
+        }
+
+        private void OnButtonClick(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var listWindow = new ComponentListWindow();
+                listWindow.Show();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ConvenientText] Failed to open ComponentListWindow: {ex.Message}");
+            }
+        }
+
+        private void OnLoaded(object? sender, RoutedEventArgs e)
+        {
+            if (_isLoaded) return;
+            _isLoaded = true;
+
+            if (!OperatingSystem.IsWindows()) return;
+            var handle = this.TryGetPlatformHandle()?.Handle;
+            if (handle == null || handle.Value == IntPtr.Zero) return;
+            _hwnd = handle.Value;
+
+            try
+            {
+                DwmSetWindowAttribute(_hwnd, DWMWA_NCRENDERING_POLICY, 2, 4);
+
+                int exStyle = GetWindowLong(_hwnd, GWL_EXSTYLE);
+                SetWindowLong(_hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+
+                SetWindowPos(_hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+            }
+            catch { }
+        }
+
+        private void OnDeactivated(object? sender, EventArgs e)
+        {
+            if (_hwnd != IntPtr.Zero)
+            {
+                try
+                {
+                    SetWindowPos(_hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                }
+                catch { }
+            }
         }
 
         private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -113,12 +189,8 @@ namespace ConvenientText.Views
 
             if (Math.Abs(delta.X) > DragThreshold || Math.Abs(delta.Y) > DragThreshold)
             {
-                if (!_isDragging)
-                {
-                    _isDragging = true;
-                }
+                if (!_isDragging) _isDragging = true;
 
-                // 新位置 = 初始窗口位置 + 鼠标位移
                 var newX = _windowPosOnDown.X + delta.X;
                 var newY = _windowPosOnDown.Y + delta.Y;
                 this.Position = new PixelPoint(newX, newY);
@@ -133,45 +205,43 @@ namespace ConvenientText.Views
             if (_isDragging)
             {
                 var pos = this.Position;
-                _dataModel.FloatingX = pos.X;
-                _dataModel.FloatingY = pos.Y;
-                _storage.Save(_dataModel);
+
+                // 【修复】旧版先把新坐标写进内存对象，却又从磁盘重新读了一份
+                // 旧数据再保存，导致坐标永远存不上。现在先读出字典、更新
+                // 对应组件的坐标、再整体保存。
+                try
+                {
+                    var all = _storage.LoadAll();
+                    if (all.TryGetValue(_dataModel.ComponentId, out var stored))
+                    {
+                        stored.FloatingX = pos.X;
+                        stored.FloatingY = pos.Y;
+                    }
+                    else
+                    {
+                        _dataModel.FloatingX = pos.X;
+                        _dataModel.FloatingY = pos.Y;
+                        all[_dataModel.ComponentId] = _dataModel.Clone();
+                    }
+                    _storage.SaveAll(all);
+                }
+                catch { }
 
                 if (_hwnd != IntPtr.Zero)
                 {
-                    SetWindowPos(_hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                    try
+                    {
+                        SetWindowPos(_hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                    }
+                    catch { }
                 }
                 _isDragging = false;
             }
         }
 
-        private void OnLoaded(object? sender, RoutedEventArgs e)
-        {
-            if (_isLoaded) return;
-            _isLoaded = true;
-
-            if (!OperatingSystem.IsWindows()) return;
-            var handle = this.TryGetPlatformHandle()?.Handle;
-            if (handle == null || handle.Value == IntPtr.Zero) return;
-            _hwnd = handle.Value;
-
-            DwmSetWindowAttribute(_hwnd, DWMWA_NCRENDERING_POLICY, 2, 4);
-
-            int exStyle = GetWindowLong(_hwnd, GWL_EXSTYLE);
-            SetWindowLong(_hwnd, GWL_EXSTYLE, exStyle | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
-
-            SetWindowPos(_hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-        }
-
-        private void OnDeactivated(object? sender, EventArgs e)
-        {
-            if (_hwnd != IntPtr.Zero)
-            {
-                SetWindowPos(_hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-            }
-        }
-
-        // === Win32 互操作（保持不变） ===
+        // ============================================================
+        //  Win32 P/Invoke
+        // ============================================================
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, int attrValue, int attrSize);
         private const int DWMWA_NCRENDERING_POLICY = 2;

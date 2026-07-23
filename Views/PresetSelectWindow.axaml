@@ -1,0 +1,112 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ConvenientText.Views.PresetSelectWindow"
+        Title="选择预设"
+        Width="400"
+        Height="360"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Topmost="False"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent">
+	<Border CornerRadius="12"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            Padding="16,10,16,16">
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="*" />
+				<RowDefinition Height="Auto" />
+			</Grid.RowDefinitions>
+
+			<!-- 自定义标题栏（随窗口一起亚克力） -->
+			<Grid x:Name="TitleBar" Grid.Row="0" Margin="0,0,0,12">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="*" />
+					<ColumnDefinition Width="Auto" />
+				</Grid.ColumnDefinitions>
+				<TextBlock Text="选择预设文本"
+                           FontWeight="SemiBold"
+                           FontSize="14"
+                           VerticalAlignment="Center" />
+				<Button x:Name="TitleBarCloseButton"
+                        Grid.Column="1"
+                        Content="✕"
+                        FontSize="13"
+                        Width="30"
+                        Height="30"
+                        Padding="0"
+                        CornerRadius="4"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="{DynamicResource SystemControlBaseHighBrush}">
+					<Button.Styles>
+						<Style Selector="Button:pointerover">
+							<Setter Property="Background" Value="#E81123" />
+							<Setter Property="Foreground" Value="White" />
+						</Style>
+					</Button.Styles>
+				</Button>
+			</Grid>
+
+			<ListBox x:Name="PresetListBox"
+                     Grid.Row="1"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     SelectionMode="Single">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<Border CornerRadius="6"
+                                Padding="10,8"
+                                Margin="0,2">
+							<Border.Styles>
+								<Style Selector="Border:pointerover">
+									<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}" />
+								</Style>
+							</Border.Styles>
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="*" />
+									<ColumnDefinition Width="Auto" />
+								</Grid.ColumnDefinitions>
+
+								<TextBlock Grid.Column="0"
+                                           Text="{Binding}"
+                                           FontSize="14"
+                                           TextTrimming="CharacterEllipsis" />
+
+								<TextBlock Grid.Column="1"
+                                           Text="▶"
+                                           FontSize="12"
+                                           Opacity="0.3"
+                                           Margin="10,0,0,0"
+                                           VerticalAlignment="Center" />
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+
+			<TextBlock x:Name="EmptyHint"
+                       Grid.Row="1"
+                       Text="暂无预设，请到插件设置中添加"
+                       Foreground="{DynamicResource SystemControlDisabledChromeDisabledBrush}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       IsVisible="False" />
+
+			<StackPanel Grid.Row="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,12,0,0"
+                        Spacing="10">
+				<Button Content="取消"
+                        Width="80"
+                        Click="OnCancelClick" />
+			</StackPanel>
+		</Grid>
+	</Border>
+</Window>

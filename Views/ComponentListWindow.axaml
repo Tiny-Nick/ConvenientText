@@ -1,0 +1,121 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="clr-namespace:ConvenientText.Converters"
+        x:Class="ConvenientText.Views.ComponentListWindow"
+        Title="选择要编辑的组件"
+        Width="440"
+        Height="440"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Topmost="False"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent">
+	<Border CornerRadius="12"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            Padding="16,10,16,16">
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="*" />
+				<RowDefinition Height="Auto" />
+			</Grid.RowDefinitions>
+
+			<!-- 自定义标题栏（随窗口一起亚克力） -->
+			<Grid x:Name="TitleBar" Grid.Row="0" Margin="0,0,0,12">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="*" />
+					<ColumnDefinition Width="Auto" />
+				</Grid.ColumnDefinitions>
+				<TextBlock Text="选择要编辑的组件"
+                           FontWeight="SemiBold"
+                           FontSize="14"
+                           VerticalAlignment="Center" />
+				<Button x:Name="TitleBarCloseButton"
+                        Grid.Column="1"
+                        Content="✕"
+                        FontSize="13"
+                        Width="30"
+                        Height="30"
+                        Padding="0"
+                        CornerRadius="4"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="{DynamicResource SystemControlBaseHighBrush}">
+					<Button.Styles>
+						<Style Selector="Button:pointerover">
+							<Setter Property="Background" Value="#E81123" />
+							<Setter Property="Foreground" Value="White" />
+						</Style>
+					</Button.Styles>
+				</Button>
+			</Grid>
+
+			<ListBox x:Name="ComponentListBox"
+                     Grid.Row="1"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     SelectionMode="Single">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<Border CornerRadius="6"
+                                Padding="10,8"
+                                Margin="0,2">
+							<Border.Styles>
+								<Style Selector="Border:pointerover">
+									<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumBrush}" />
+								</Style>
+							</Border.Styles>
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="Auto" />
+									<ColumnDefinition Width="*" />
+									<ColumnDefinition Width="Auto" />
+								</Grid.ColumnDefinitions>
+
+								<TextBlock Grid.Column="0"
+                                           Text="●"
+                                           FontSize="18"
+                                           Foreground="{Binding DotColor, Converter={x:Static conv:ColorToBrushConverter.Instance}}"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,10,0" />
+
+								<StackPanel Grid.Column="1" VerticalAlignment="Center">
+									<TextBlock FontWeight="SemiBold" FontSize="14">
+										<TextBlock.Text>
+											<MultiBinding StringFormat="组件 #{0}">
+												<Binding Path="OrderIndex" />
+											</MultiBinding>
+										</TextBlock.Text>
+									</TextBlock>
+									<TextBlock Text="{Binding DisplayText}"
+                                               FontSize="13"
+                                               Opacity="0.7"
+                                               TextTrimming="CharacterEllipsis" />
+								</StackPanel>
+
+								<TextBlock Grid.Column="2"
+                                           Text="▶"
+                                           FontSize="14"
+                                           Opacity="0.4"
+                                           VerticalAlignment="Center" />
+							</Grid>
+						</Border>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+
+			<StackPanel Grid.Row="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,12,0,0"
+                        Spacing="10">
+				<Button Content="关闭"
+                        Width="80"
+                        Click="OnCloseClick" />
+			</StackPanel>
+		</Grid>
+	</Border>
+</Window>

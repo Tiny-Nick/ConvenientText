@@ -1,0 +1,83 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:ConvenientText.Converters"
+             x:Class="ConvenientText.Views.ComponentSettingsPanel"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch">
+	<StackPanel Spacing="12">
+		<StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,4">
+			<TextBlock Text="●"
+                       FontSize="22"
+                       Foreground="{Binding DotColor, Converter={x:Static conv:ColorToBrushConverter.Instance}}"
+                       VerticalAlignment="Center" />
+			<TextBlock FontWeight="Bold"
+                       FontSize="16"
+                       VerticalAlignment="Center">
+				<TextBlock.Text>
+					<MultiBinding StringFormat="组件 #{0} 设置">
+						<Binding Path="OrderIndex" />
+					</MultiBinding>
+				</TextBlock.Text>
+			</TextBlock>
+		</StackPanel>
+
+		<Separator Margin="0,0,0,4" />
+
+		<TextBox Text="{Binding DisplayText}"
+                 Watermark="输入要显示的文字..." />
+
+		<StackPanel Orientation="Horizontal" Spacing="10">
+			<TextBlock Text="文字颜色：" VerticalAlignment="Center" />
+			<ColorPicker Color="{Binding TextColor}" Width="40" Height="30" />
+		</StackPanel>
+
+		<StackPanel Orientation="Horizontal" Spacing="10">
+			<TextBlock Text="字号：" VerticalAlignment="Center" />
+			<Slider Minimum="10" Maximum="48"
+                    Value="{Binding FontSize}"
+                    Width="150"
+                    TickFrequency="2"
+                    IsSnapToTickEnabled="True"
+                    VerticalAlignment="Center" />
+			<TextBlock Text="{Binding FontSize}" VerticalAlignment="Center" Width="25" />
+		</StackPanel>
+
+		<Border CornerRadius="6"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}"
+                Padding="10,6">
+			<TextBlock Text="{Binding DisplayText}"
+                       FontSize="{Binding FontSize}"
+                       Foreground="{Binding TextColor, Converter={x:Static conv:ColorToBrushConverter.Instance}}"
+                       TextTrimming="CharacterEllipsis" />
+		</Border>
+
+		<Separator Margin="0,4,0,4" />
+
+		<Expander Header="时间段显示控制"
+                  IsExpanded="False">
+			<StackPanel Spacing="8" Margin="0,8,0,0">
+				<CheckBox Content="启用时间段限制"
+                          IsChecked="{Binding EnableTimeRange}" />
+				<StackPanel Orientation="Horizontal" Spacing="10">
+					<TextBlock Text="开始时间：" VerticalAlignment="Center" />
+					<TimePicker SelectedTime="{Binding StartTime}" />
+				</StackPanel>
+				<StackPanel Orientation="Horizontal" Spacing="10">
+					<TextBlock Text="结束时间：" VerticalAlignment="Center" />
+					<TimePicker SelectedTime="{Binding EndTime}" />
+				</StackPanel>
+				<TextBlock Text="在指定时间段外，该组件将自动隐藏"
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemControlDisabledChromeDisabledBrush}" />
+			</StackPanel>
+		</Expander>
+
+		<CheckBox Content="启用该组件的悬浮按钮"
+                  IsChecked="{Binding IsFloatingButtonEnabled}" />
+
+		<TextBlock Text="提示：悬浮按钮的全局可见性还取决于主界面是否加载了该组件"
+                   FontSize="11"
+                   Foreground="{DynamicResource SystemControlDisabledChromeDisabledBrush}"
+                   TextWrapping="Wrap" />
+	</StackPanel>
+</UserControl>

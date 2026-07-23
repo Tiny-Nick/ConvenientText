@@ -1,0 +1,109 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="ConvenientText.Views.EditTextWindow"
+        Title="编辑文本"
+        Width="560"
+        Height="160"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Topmost="False"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent">
+	<Border CornerRadius="12"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            Padding="16,10,16,16">
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="*" />
+			</Grid.RowDefinitions>
+
+			<!-- 自定义标题栏（随窗口一起亚克力） -->
+			<Grid x:Name="TitleBar" Grid.Row="0" Margin="0,0,0,12">
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="*" />
+					<ColumnDefinition Width="Auto" />
+				</Grid.ColumnDefinitions>
+				<TextBlock Text="编辑文本"
+                           FontWeight="SemiBold"
+                           FontSize="14"
+                           VerticalAlignment="Center" />
+				<Button x:Name="TitleBarCloseButton"
+                        Grid.Column="1"
+                        Content="✕"
+                        FontSize="13"
+                        Width="30"
+                        Height="30"
+                        Padding="0"
+                        CornerRadius="4"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="{DynamicResource SystemControlBaseHighBrush}">
+					<Button.Styles>
+						<Style Selector="Button:pointerover">
+							<Setter Property="Background" Value="#E81123" />
+							<Setter Property="Foreground" Value="White" />
+						</Style>
+					</Button.Styles>
+				</Button>
+			</Grid>
+
+			<Grid Grid.Row="1">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="Auto" />
+				</Grid.RowDefinitions>
+
+				<DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,15">
+					<StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="5"
+                            VerticalAlignment="Center">
+						<TextBlock Text="字号" VerticalAlignment="Center" />
+						<Slider x:Name="FontSizeSlider"
+                            Minimum="10" Maximum="48"
+                            Value="18"
+                            Width="80"
+                            TickFrequency="2"
+                            IsSnapToTickEnabled="True"
+                            VerticalAlignment="Center" />
+						<TextBlock x:Name="SizeLabel" Text="18" Width="25" VerticalAlignment="Center" />
+					</StackPanel>
+
+					<StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Spacing="5"
+                            Margin="10,0"
+                            VerticalAlignment="Center">
+						<TextBlock Text="颜色" VerticalAlignment="Center" />
+						<ColorPicker x:Name="ColorPicker" Width="40" Height="30" />
+					</StackPanel>
+
+					<Button x:Name="PresetButton"
+                        Content="📋 加载预设"
+                        Width="100"
+                        DockPanel.Dock="Left"
+                        Margin="0,0,10,0" />
+
+					<TextBox x:Name="InputBox"
+                         Watermark="输入要显示的文字..."
+                         AcceptsReturn="False"
+					     Height="28"
+                         VerticalContentAlignment="Center"
+                         Margin="0,0,10,0" />
+				</DockPanel>
+
+				<StackPanel Grid.Row="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Spacing="10">
+					<Button x:Name="CancelButton" Content="取消" Width="80" />
+					<Button x:Name="ConfirmButton" Content="确定" Classes="Accent" Width="80" />
+				</StackPanel>
+			</Grid>
+		</Grid>
+	</Border>
+</Window>

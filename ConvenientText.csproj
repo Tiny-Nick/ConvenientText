@@ -1,34 +1,28 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFramework>net8.0-windows</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
-		<UseWindowsForms>true</UseWindowsForms>
-	</PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>ConvenientText</AssemblyName>
+    <RootNamespace>ConvenientText</RootNamespace>
+    <Version>1.2.0.0</Version>
+    <!-- 编译后不自动拷贝依赖 dll，插件只需自身 dll 与 manifest -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
 
-	<PropertyGroup>
-		<ClassIslandPluginSdkVersion>1.7.106.2-dev-v2</ClassIslandPluginSdkVersion>
-	</PropertyGroup>
+  <ItemGroup>
+    <!-- 打包插件所需的清单/图标/说明文件，编译后自动复制到输出目录 -->
+    <None Include="manifest.yml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="icon.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="README.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="ClassIsland.PluginSdk" Version="$(ClassIslandPluginSdkVersion)">
-			<ExcludeAssets>runtime; native</ExcludeAssets>
-		</PackageReference>
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-		<PackageReference Include="System.Management" Version="7.0.2" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Update="manifest.yml">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="README.md">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="icon.png">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
+  <ItemGroup>
+    <!-- ClassIsland 插件 SDK（已用 2.1.0 实际编译验证通过） -->
+    <PackageReference Include="ClassIsland.PluginSdk" Version="2.1.0" />
+    <!-- U盘检测（WMI）所需 -->
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
 
 </Project>

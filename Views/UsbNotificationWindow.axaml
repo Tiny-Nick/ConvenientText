@@ -1,37 +1,74 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="ConvenientText.Views.UsbNotificationWindow"
         Title="提示"
         Width="420"
-        Height="200"
+        Height="220"
         CanResize="False"
         WindowStartupLocation="CenterScreen"
-        Topmost="True">
-	<Grid Margin="20">
-		<Grid.RowDefinitions>
-			<RowDefinition Height="Auto" />
-			<RowDefinition Height="*" />
-			<RowDefinition Height="Auto" />
-		</Grid.RowDefinitions>
+        Topmost="True"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="-1"
+        TransparencyLevelHint="AcrylicBlur"
+        Background="Transparent">
+    <Border CornerRadius="12"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+            Padding="20,10,20,20">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
 
-		<TextBlock Grid.Row="0" Text="U盘已插入" FontWeight="Bold" FontSize="18" Margin="0,0,0,15" />
+            <!-- 自定义标题栏（随窗口一起亚克力） -->
+            <Grid x:Name="TitleBar" Grid.Row="0" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="U盘已插入"
+                           FontWeight="SemiBold"
+                           FontSize="15"
+                           VerticalAlignment="Center" />
+                <Button x:Name="TitleBarCloseButton"
+                        Grid.Column="1"
+                        Content="✕"
+                        FontSize="13"
+                        Width="30"
+                        Height="30"
+                        Padding="0"
+                        CornerRadius="4"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="{DynamicResource SystemControlBaseHighBrush}">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover">
+                            <Setter Property="Background" Value="#E81123" />
+                            <Setter Property="Foreground" Value="White" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+            </Grid>
 
-		<StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="10">
-			<TextBlock Text="请注意黑板的推拉以防止U盘和白板插口的损坏"
-                       FontSize="14"
-                       TextWrapping="Wrap"
-                       HorizontalAlignment="Center" />
-			<TextBlock Text="请小心操作，避免损坏设备"
-                       FontSize="12"
-                       Foreground="Gray"
-                       HorizontalAlignment="Center" />
-		</StackPanel>
+            <StackPanel Grid.Row="1" VerticalAlignment="Center" Spacing="10">
+                <TextBlock Text="请注意黑板的推拉以防止U盘和白板插口的损坏"
+                           FontSize="14"
+                           TextWrapping="Wrap"
+                           HorizontalAlignment="Center" />
+                <TextBlock Text="请小心操作，避免损坏设备"
+                           FontSize="12"
+                           Foreground="{DynamicResource SystemControlDisabledChromeDisabledBrush}"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
 
-		<StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" Spacing="10">
-			<Button Content="确定"
-                    Classes="Accent"
-                    Width="80"
-                    Click="OnOkClick" />
-		</StackPanel>
-	</Grid>
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" Spacing="10">
+                <Button Content="确定"
+                        Classes="Accent"
+                        Width="80"
+                        Click="OnOkClick" />
+            </StackPanel>
+        </Grid>
+    </Border>
 </Window>

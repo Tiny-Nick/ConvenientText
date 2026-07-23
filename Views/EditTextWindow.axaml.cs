@@ -1,64 +1,64 @@
-﻿using Avalonia;
+﻿// ============================================================
+//  EditTextWindow.axaml.cs
+//  作用：“编辑文本”弹窗的交互逻辑。
+//  提供：文字输入、颜色选择、字号滑块、预设加载。
+//  点确定后：先改传入的模型本体（界面立即刷新），再统一从
+//  共享存储读出最新字典、写入本组件克隆体、整体保存。
+// ============================================================
+
+using System;
+using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using ConvenientText.Models;
-using System;
+using ConvenientText.Services;
+
+// 消除歧义别名
+using AvaloniaTextBox = Avalonia.Controls.TextBox;
+using AvaloniaButton = Avalonia.Controls.Button;
+using AvaloniaColorPicker = Avalonia.Controls.ColorPicker;
+using AvaloniaSlider = Avalonia.Controls.Slider;
+using AvaloniaTextBlock = Avalonia.Controls.TextBlock;
 
 namespace ConvenientText.Views
 {
     public partial class EditTextWindow : Window
     {
         private readonly TextDataModel _dataModel;
-        private readonly Avalonia.Controls.TextBox _inputBox;
-        private readonly Avalonia.Controls.ColorPicker _colorPicker;
-        private readonly Avalonia.Controls.Slider _fontSizeSlider;
-        private readonly Avalonia.Controls.TextBlock _sizeLabel;
+        private readonly DataStorageService _storage;
+        private readonly AvaloniaTextBox _inputBox;
+        private readonly AvaloniaColorPicker _colorPicker;
+        private readonly AvaloniaSlider _fontSizeSlider;
+        private readonly AvaloniaTextBlock _sizeLabel;
+        private readonly AvaloniaButton _presetButton;
 
+        /// <summary>
+        /// 构造函数。
+        /// </summary>
+        /// <param name="dataModel">要编辑的组件模型。
+        /// 如果是主界面组件的 Settings，改动会立即反映在界面上；
+        /// 确定后还会统一写入共享存储并广播同步。</param>
         public EditTextWindow(TextDataModel dataModel)
         {
+            InitializeComponent();
+
+            AcrylicTitleBarHelper.Attach(this); // 接上亚克力标题栏（拖动+关闭）
+
+            _storage = Plugin.Storage ?? new DataStorageService();
             _dataModel = dataModel;
 
-            Title = "文本编辑";
-            Width = 520;
-            Height = 130;
-            CanResize = false;
-            WindowStartupLocation = WindowStartupLocation.CenterScreen;
-            Topmost = false;
+            _inputBox = this.FindControl<AvaloniaTextBox>("InputBox")!;
+            _colorPicker = this.FindControl<AvaloniaColorPicker>("ColorPicker")!;
+            _fontSizeSlider = this.FindControl<AvaloniaSlider>("FontSizeSlider")!;
+            _sizeLabel = this.FindControl<AvaloniaTextBlock>("SizeLabel")!;
+            _presetButton = this.FindControl<AvaloniaButton>("PresetButton")!;
 
-            _inputBox = new Avalonia.Controls.TextBox
-            {
-                Watermark = "输入要显示的文字...",
-                AcceptsReturn = false,
-                VerticalContentAlignment = Avalonia.Layout.VerticalAlignment.Center,
-                Text = _dataModel.DisplayText,
-                Margin = new Thickness(0, 0, 10, 0)
-            };
-
-            _colorPicker = new Avalonia.Controls.ColorPicker
-            {
-                Width = 40,
-                Height = 30,
-                Color = _dataModel.TextColor
-            };
-
-            _fontSizeSlider = new Avalonia.Controls.Slider
-            {
-                Minimum = 10,
-                Maximum = 48,
-                Value = _dataModel.FontSize,
-                TickFrequency = 2,
-                IsSnapToTickEnabled = true,
-                Width = 80,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            };
-
-            _sizeLabel = new Avalonia.Controls.TextBlock
-            {
-                Text = ((int)_dataModel.FontSize).ToString(),
-                Width = 25,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            };
+            _inputBox.Text = _dataModel.DisplayText;
+            _colorPicker.Color = _dataModel.TextColor;
+            _fontSizeSlider.Value = _dataModel.FontSize;
+            _sizeLabel.Text = ((int)_dataModel.FontSize).ToString();
 
             _fontSizeSlider.PropertyChanged += (s, e) =>
             {
@@ -66,80 +66,90 @@ namespace ConvenientText.Views
                     _sizeLabel.Text = ((int)_fontSizeSlider.Value).ToString();
             };
 
-            var confirmBtn = new Avalonia.Controls.Button
-            {
-                Content = "确定",
-                Classes = { "Accent" },
-                Width = 80
-            };
+            _presetButton.Click += OnPresetButtonClick;
+
+            var confirmBtn = this.FindControl<AvaloniaButton>("ConfirmButton")!;
             confirmBtn.Click += OnConfirmClick;
 
-            var cancelBtn = new Avalonia.Controls.Button
-            {
-                Content = "取消",
-                Width = 80
-            };
+            var cancelBtn = this.FindControl<AvaloniaButton>("CancelButton")!;
             cancelBtn.Click += OnCancelClick;
+        }
 
-            var row1 = new Avalonia.Controls.DockPanel { LastChildFill = true, Margin = new Thickness(0, 0, 0, 15) };
+        private void OnPresetButtonClick(object? sender, RoutedEventArgs e)
+        {
+            // 【修复】预设从共享存储的第一个有效组件读取（预设库是全局的，
+            // 设置页里保存时会写入所有有效组件）
+            var allData = _storage.LoadAll();
+            var firstValid = allData.Values
+                .Where(m => m.IsValid)
+                .OrderBy(m => m.OrderIndex)
+                .FirstOrDefault();
+            var presets = firstValid?.Presets;
 
-            var sizePanel = new Avalonia.Controls.StackPanel
+            if (presets == null || presets.Count == 0)
             {
-                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                Spacing = 5,
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
-            };
-            sizePanel.Children.Add(new Avalonia.Controls.TextBlock { Text = "字号", VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center });
-            sizePanel.Children.Add(_fontSizeSlider);
-            sizePanel.Children.Add(_sizeLabel);
-            Avalonia.Controls.DockPanel.SetDock(sizePanel, Dock.Right);
-            row1.Children.Add(sizePanel);
+                var dialog = new Window
+                {
+                    Title = "提示",
+                    Width = 300,
+                    Height = 150,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Content = new StackPanel
+                    {
+                        Margin = new Thickness(20),
+                        Spacing = 15,
+                        Children =
+                        {
+                            new TextBlock { Text = "暂无预设，请前往插件设置中添加。", TextWrapping = TextWrapping.Wrap },
+                            new AvaloniaButton { Content = "确定", HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center, Width = 80 }
+                        }
+                    }
+                };
+                var okBtn = (AvaloniaButton)((StackPanel)dialog.Content).Children[1];
+                okBtn.Click += (_, _) => dialog.Close();
+                _ = dialog.ShowDialog(this);
+                return;
+            }
 
-            var colorPanel = new Avalonia.Controls.StackPanel
+            var presetWindow = new PresetSelectWindow(presets);
+            presetWindow.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+
+            presetWindow.Closed += (_, _) =>
             {
-                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                Spacing = 5,
-                Margin = new Thickness(10, 0),
-                VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center
+                if (!string.IsNullOrEmpty(presetWindow.SelectedPreset))
+                    _inputBox.Text = presetWindow.SelectedPreset;
             };
-            colorPanel.Children.Add(new Avalonia.Controls.TextBlock { Text = "颜色", VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center });
-            colorPanel.Children.Add(_colorPicker);
-            Avalonia.Controls.DockPanel.SetDock(colorPanel, Dock.Right);
-            row1.Children.Add(colorPanel);
 
-            row1.Children.Add(_inputBox);
-
-            var row2 = new Avalonia.Controls.StackPanel
-            {
-                Orientation = Avalonia.Layout.Orientation.Horizontal,
-                Spacing = 10,
-                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
-            };
-            row2.Children.Add(cancelBtn);
-            row2.Children.Add(confirmBtn);
-
-            var grid = new Avalonia.Controls.Grid { Margin = new Thickness(20) };
-            grid.RowDefinitions.Add(new Avalonia.Controls.RowDefinition(Avalonia.Controls.GridLength.Auto));
-            grid.RowDefinitions.Add(new Avalonia.Controls.RowDefinition(Avalonia.Controls.GridLength.Auto));
-            Avalonia.Controls.Grid.SetRow(row1, 0);
-            Avalonia.Controls.Grid.SetRow(row2, 1);
-            grid.Children.Add(row1);
-            grid.Children.Add(row2);
-
-            Content = grid;
+            _ = presetWindow.ShowDialog(this);
         }
 
         private void OnConfirmClick(object? sender, RoutedEventArgs e)
         {
+            // 1. 先改传入的模型本体（如果是主界面组件的 Settings，界面会立即刷新）
             _dataModel.DisplayText = _inputBox.Text ?? "";
             _dataModel.TextColor = _colorPicker.Color;
             _dataModel.FontSize = _fontSizeSlider.Value;
-            Close();
+
+            // 2. 【修复】统一从磁盘读出最新字典，写入本组件的克隆体后整体保存。
+            //    保存会触发 DataChanged，其它窗口/组件自动同步，不会再出现
+            //    “改了没反应”的双数据不同步问题。
+            try
+            {
+                var all = _storage.LoadAll();
+                all[_dataModel.ComponentId] = _dataModel.Clone();
+                _storage.SaveAll(all);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ConvenientText] Failed to save text: {ex.Message}");
+            }
+
+            this.Close();
         }
 
         private void OnCancelClick(object? sender, RoutedEventArgs e)
         {
-            Close();
+            this.Close();
         }
     }
 }
