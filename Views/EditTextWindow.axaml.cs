@@ -34,6 +34,10 @@ namespace ConvenientText.Views
         private readonly AvaloniaTextBlock _sizeLabel;
         private readonly AvaloniaButton _presetButton;
 
+        public EditTextWindow() : this(TextDataModel.CreateNew(1, Colors.Gray))
+        {
+        }
+
         /// <summary>
         /// 构造函数。
         /// </summary>

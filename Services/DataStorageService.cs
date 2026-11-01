@@ -150,9 +150,12 @@ namespace ConvenientText.Services
             try
             {
                 var json = JsonSerializer.Serialize(_globalSettings, _jsonOptions);
-                File.WriteAllText(_globalSettingsPath, json);
+                WriteAtomically(_globalSettingsPath, json);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ConvenientText] Failed to save global settings: {ex.Message}");
+            }
         }
 
         // ============================================================
@@ -209,12 +212,31 @@ namespace ConvenientText.Services
             try
             {
                 var json = JsonSerializer.Serialize(dataDict, _jsonOptions);
-                File.WriteAllText(_filePath, json);
+                WriteAtomically(_filePath, json);
             }
-            catch { } // 写盘失败（权限/磁盘满等）不致命，静默跳过
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ConvenientText] Failed to save component data: {ex.Message}");
+                return;
+            }
 
             // 广播“数据变了”，让组件/悬浮按钮/设置页保持同步
             try { DataChanged?.Invoke(this, EventArgs.Empty); } catch { }
+        }
+
+        private static void WriteAtomically(string path, string content)
+        {
+            var temporaryPath = $"{path}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                File.WriteAllText(temporaryPath, content);
+                File.Move(temporaryPath, path, true);
+            }
+            finally
+            {
+                if (File.Exists(temporaryPath))
+                    File.Delete(temporaryPath);
+            }
         }
 
         // ============================================================

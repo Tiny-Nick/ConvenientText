@@ -16,7 +16,7 @@ namespace ConvenientText.Services
     /// 并通过 INotifyPropertyChanged 通知所有订阅者。
     /// 在 Plugin.cs 里注册为单例（AddSingleton），整个插件共享一个实例。
     /// </summary>
-    public class TimeRangeService : INotifyPropertyChanged
+    public class TimeRangeService : INotifyPropertyChanged, IDisposable
     {
         /// <summary>当前时间（每 5 秒刷新一次）</summary>
         private DateTime _currentTime = DateTime.Now;
@@ -64,5 +64,11 @@ namespace ConvenientText.Services
         /// <summary>触发属性变化通知</summary>
         protected void OnPropertyChanged(string name) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        public void Dispose()
+        {
+            _updateTimer.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }

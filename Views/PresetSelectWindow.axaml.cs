@@ -33,6 +33,10 @@ namespace ConvenientText.Views
         /// </summary>
         public string? SelectedPreset { get; private set; }
 
+        public PresetSelectWindow() : this(new ObservableCollection<PresetItem>())
+        {
+        }
+
         /// <summary>
         /// 构造函数。
         /// </summary>
@@ -46,11 +50,11 @@ namespace ConvenientText.Views
 
             // 控件初始化阶段 FindResource 可能返回 UnsetValue，全部用 try-catch 兜底
             IBrush hintBrush;
-            try { hintBrush = (IBrush)this.FindResource("SystemControlDisabledChromeDisabledBrush"); }
+            try { hintBrush = this.FindResource("SystemControlDisabledChromeDisabledBrush") as IBrush ?? Brush.Parse("#99FFFFFF"); }
             catch { hintBrush = Brush.Parse("#99FFFFFF"); }
 
             IBrush hoverBrush;
-            try { hoverBrush = (IBrush)this.FindResource("SystemControlBackgroundChromeMediumBrush"); }
+            try { hoverBrush = this.FindResource("SystemControlBackgroundChromeMediumBrush") as IBrush ?? Brush.Parse("#20FFFFFF"); }
             catch { hoverBrush = Brush.Parse("#20FFFFFF"); }
 
             var panel = this.FindControl<StackPanel>("PresetGroupPanel");

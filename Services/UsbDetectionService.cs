@@ -39,7 +39,7 @@ namespace ConvenientText.Services
         private readonly DataStorageService _storage;
 
         /// <summary>防止短时间内重复弹窗</summary>
-        private bool _notificationShowing = false;
+        private int _notificationShowing;
 
         /// <summary>
         /// 构造函数。参数由依赖注入自动传入（见 Plugin.cs：
@@ -110,7 +110,7 @@ namespace ConvenientText.Services
             }
 
             // 【修复】已有窗口在显示时不再弹新窗，避免快速插拔堆叠
-            if (_notificationShowing)
+            if (Interlocked.CompareExchange(ref _notificationShowing, 1, 0) != 0)
             {
                 Console.WriteLine("[ConvenientText] USB notification already showing, skipped.");
                 return;
@@ -120,18 +120,17 @@ namespace ConvenientText.Services
             {
                 try
                 {
-                    _notificationShowing = true;
                     Console.WriteLine("[ConvenientText] USB drive detected.");
                     var notificationWindow = new UsbNotificationWindow();
                     notificationWindow.Closed += (_, _) =>
                     {
-                        _notificationShowing = false;
+                        Interlocked.Exchange(ref _notificationShowing, 0);
                     };
                     notificationWindow.Show();
                 }
                 catch (Exception ex)
                 {
-                    _notificationShowing = false;
+                    Interlocked.Exchange(ref _notificationShowing, 0);
                     Console.WriteLine($"[ConvenientText] Error showing USB notification: {ex.Message}");
                 }
             });

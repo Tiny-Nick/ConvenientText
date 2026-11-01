@@ -7,8 +7,9 @@
     <AssemblyName>ConvenientText</AssemblyName>
     <RootNamespace>ConvenientText</RootNamespace>
     <Version>1.2.3.0</Version>
-    <!-- 编译后不自动拷贝依赖 dll，插件只需自身 dll 与 manifest -->
+    <!-- ClassIsland provides the shared framework assemblies. -->
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +23,15 @@
     <!-- ClassIsland 插件 SDK（已用 2.1.0 实际编译验证通过） -->
     <PackageReference Include="ClassIsland.PluginSdk" Version="2.1.0" />
     <!-- U盘检测（WMI）所需 -->
-    <PackageReference Include="System.Management" Version="8.0.0" />
+    <PackageReference Include="System.Management" Version="8.0.0" GeneratePathProperty="true" />
+    <PackageReference Include="System.CodeDom" Version="8.0.0" GeneratePathProperty="true" PrivateAssets="all" />
   </ItemGroup>
+
+  <Target Name="CopyPluginRuntimeDependencies" AfterTargets="Build">
+    <Copy SourceFiles="$(PkgSystem_Management)/runtimes/win/lib/net8.0/System.Management.dll"
+          DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(PkgSystem_CodeDom)/lib/net8.0/System.CodeDom.dll"
+          DestinationFolder="$(OutputPath)" />
+  </Target>
 
 </Project>

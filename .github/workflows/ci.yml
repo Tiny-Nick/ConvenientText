@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: ConvenientText.csproj
+      - run: dotnet restore ConvenientText.csproj
+      - name: Lint
+        run: dotnet format ConvenientText.csproj --verify-no-changes --no-restore
+      - name: Build
+        run: dotnet build ConvenientText.csproj --configuration Release --no-restore
+      - name: Verify package
+        shell: pwsh
+        run: |
+          ./package.ps1 -NoBuild
+          ./check-zip.ps1
+      - uses: actions/upload-artifact@v6
+        with:
+          name: ConvenientText
+          path: artifacts/ConvenientText.cipx
+          if-no-files-found: error

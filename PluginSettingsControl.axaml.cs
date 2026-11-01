@@ -455,7 +455,7 @@ namespace ConvenientText
 
             // 控件初始化阶段 FindResource 可能返回 UnsetValue，用 try-catch 兜底
             IBrush hintBrush;
-            try { hintBrush = (IBrush)this.FindResource("SystemControlDisabledChromeDisabledBrush"); }
+            try { hintBrush = this.FindResource("SystemControlDisabledChromeDisabledBrush") as IBrush ?? Brush.Parse("#99FFFFFF"); }
             catch { hintBrush = Brush.Parse("#99FFFFFF"); }
 
             if (_presets.Count == 0)

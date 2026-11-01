@@ -1,5 +1,19 @@
 # ClassIsland 便捷文本插件 1.2.3.0
 
+## 开发
+
+需要 .NET 8 SDK。仓库以项目文件作为 CLI 入口：
+
+```shell
+dotnet restore ConvenientText.csproj
+dotnet format ConvenientText.csproj --verify-no-changes --no-restore
+dotnet build ConvenientText.csproj --configuration Release --no-restore
+```
+
+Windows PowerShell 下运行 `./package.ps1` 会在 `artifacts/ConvenientText.cipx`
+生成插件包；`./check-zip.ps1` 用于检查必需文件。Pull Request 和 `main`
+分支提交会通过 GitHub Actions 执行相同的检查。
+
 ## 插件简介
 
 用传统 CI 文本组件想在主界面上改一行字，得打开设置 → 找到组件 → 点开组件设置 → 改完再关掉……改一个字要翻好几层，特别麻烦。
